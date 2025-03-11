@@ -1,0 +1,7 @@
+# 格式: IP地址,用戶名,密碼,設備名稱(可選)
+# 每行一台設備
+10.8.34.186,admin,uniforce,F5-Device1
+# 10.1.1.2,admin,adminPassword,F5-Device2
+# 192.168.10.50,admin,strongPassword,F5-Production
+# 172.16.5.100,admin,securePass123,F5-DR
+# 10.1.1.3,admin,adminPassword,F5-Device3  # 使用 # 可以註釋掉不需要的設備
