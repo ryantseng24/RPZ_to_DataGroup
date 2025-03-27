@@ -9,7 +9,7 @@
 1. **RPZ轉換器** (`rpz_converter_v1.py`) - 將DNS RPZ區域數據轉換為F5數據組格式，並通過HTTP伺服器提供這些數據
 2. **F5更新器** (`update_data_group.py`) - 定期連接到F5設備並更新外部數據組來源路徑
 
-![系統架構圖](https://via.placeholder.com/800x400?text=F5+RPZ+Blacklist+Automation+Architecture)
+![系統架構圖](APP_Flow.png)
 
 ## 功能特點
 
