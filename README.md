@@ -16,7 +16,7 @@
 ### RPZ轉換器
 - 從DNS伺服器獲取RPZ區域數據（FQDN和IP）
 - 將數據轉換為F5兼容的數據組格式
-- 合併來自多個區域的數據
+- 合併來自多個區域的數據 (for台哥大，此功能移除，區域數據各自獨立）
 - 通過HTTP伺服器提供轉換後的數據
 - 定期自動刷新區域數據
 
@@ -36,14 +36,15 @@
 ## 文件結構
 
 ```
-├── rpz_converter_v1.py          # RPZ轉換器主腳本
+├── rpz_converter_v2.py          # RPZ轉換器主腳本
 ├── update_data_group.py         # F5更新器主腳本
 ├── rpz_fqdn_zone.txt            # FQDN區域列表
 ├── rpz_ip_zone.txt              # IP區域列表
 ├── f5_devices.txt               # F5設備資訊
 ├── f5_datagroups/               # 轉換後的數據輸出目錄
-│   ├── rpz_blacklist.txt        # 合併的FQDN記錄
-│   └── rpzip_blacklist.txt      # 合併的IP記錄
+│   ├── rpztw_blacklist.txt      # rpztw dat group data
+│   ├── phishingtw_blacklist.txt # phishingtw data group data
+│   └── rpzip_blacklist.txt      # rpzip dat group data
 ├── rpz_converter.log            # RPZ轉換器日誌
 └── f5_updater.log               # F5更新器日誌
 ```
