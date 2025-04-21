@@ -1,0 +1,4 @@
+# rpz_fqdn_zone.txt 示例
+rpztw.
+phishtw.
+
