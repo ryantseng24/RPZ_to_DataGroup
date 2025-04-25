@@ -15,7 +15,7 @@
 
 ## 系統架構
 
-![RPZ to F5 DataGroup Automation Flow](docs/architecture.svg)
+![RPZ to F5 DataGroup Automation Flow](APP_Flow.png)
 
 ### 資料流向說明
 
