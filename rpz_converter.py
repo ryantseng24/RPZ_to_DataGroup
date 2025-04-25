@@ -15,6 +15,13 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 # --- 基本設定 ---
 DNS_SERVER = "10.8.38.225"  # 更新為您的 DNS 伺服器 IP
+# *** 新增：TSIG Key 設定 ***
+# 請將下面的 LAB Key 更換為您正式環境的 TSIG Key 字串
+# 格式通常是 '演算法:金鑰名稱:金鑰內容(Base64)'
+TSIG_KEY_STRING = "hmac-sha256:rpztw:jXt2Kt0bZevOXrl9GKfGPw==" # LAB Key 範例，客戶需更改為正式 Key
+# 如果不需要 TSIG Key，請將此變數設為 None 或空字串 ""
+# TSIG_KEY_STRING = None
+
 UPDATE_INTERVAL = 5 * 60  # 更新間隔 (秒)，例如 5 * 60 = 5 分鐘
 FQDN_ZONE_LIST_FILE = "rpz_fqdn_zone.txt" # FQDN Zone 列表檔案
 IP_ZONE_LIST_FILE = "rpz_ip_zone.txt"     # IP Zone 列表檔案
@@ -41,7 +48,7 @@ SMTP_SERVER = "smtp.gmail.com"  # 您的 SMTP 伺服器地址
 SMTP_PORT = 587                     # 您的 SMTP 伺服器端口 (通常是 587 for TLS, 465 for SSL, 25 for non-secure)
 SMTP_USE_TLS = True                 # 是否使用 TLS 加密 (建議 True)
 SMTP_USER = "ryantseng0224@gmail.com" # 您的 SMTP 登入帳號
-# *** 新增：從環境變數讀取 SMTP 密碼 ***
+# 從環境變數讀取 SMTP 密碼
 SMTP_PASSWORD_ENV_VAR = "SMTP_APP_PASSWORD" # 環境變數名稱
 SMTP_PASSWORD = os.environ.get(SMTP_PASSWORD_ENV_VAR)
 EMAIL_SENDER = "ryantseng0224@gmail.com" # 發件人 Email 地址
@@ -197,13 +204,20 @@ def read_zone_list(file_path):
         return []
 
 def query_zone_data(zone_name):
-    """使用 dig axfr 查詢 zone 資料"""
+    """
+    使用 dig axfr 查詢 zone 資料。
+    如果設定了 TSIG_KEY_STRING，則使用 TSIG Key 進行驗證。
+    """
     try:
-        # 使用絕對路徑或確保 dig 在 PATH 中
-        # dig_path = "/usr/bin/dig" # 或者你的 dig 路徑
-        # cmd = [dig_path, f"@{DNS_SERVER}", "axfr", zone_name]
-        cmd = ["dig", f"@{DNS_SERVER}", "axfr", zone_name] # 假設 dig 在 PATH 中
-        logger.info(f"執行命令: {' '.join(cmd)}")
+        # 基礎命令
+        cmd = ["dig", f"@{DNS_SERVER}", "axfr", zone_name]
+
+        # *** 修改：檢查是否需要加入 TSIG Key ***
+        if TSIG_KEY_STRING:
+            cmd.extend(["-y", TSIG_KEY_STRING])
+            logger.info(f"使用 TSIG Key 執行命令: {' '.join(cmd)}") # 顯示包含 -y 的指令 (但不顯示 Key 內容)
+        else:
+            logger.info(f"執行命令: {' '.join(cmd)}") # 顯示不含 Key 的指令
 
         # 增加超時和緩衝區設置以處理大型區域
         # 設定環境變數 LANG=C 確保輸出是英文，避免解析問題
@@ -220,8 +234,14 @@ def query_zone_data(zone_name):
         logger.error(f"找不到 'dig' 命令。請確保已安裝 dig 工具並且其路徑在系統的 PATH 環境變數中。")
         return ""
     except subprocess.CalledProcessError as e:
-        logger.error(f"查詢 zone {zone_name} 時發生錯誤 (命令返回非零值): {e}")
-        logger.error(f"錯誤輸出: {e.stderr}")
+        # 檢查是否為 TSIG 相關錯誤
+        stderr_output = e.stderr.lower() if e.stderr else ""
+        if "tsig" in stderr_output and "failed" in stderr_output:
+             logger.error(f"查詢 zone {zone_name} 時發生 TSIG 驗證失敗。請檢查 TSIG_KEY_STRING 設定是否正確。")
+             logger.error(f"錯誤輸出: {e.stderr}")
+        else:
+             logger.error(f"查詢 zone {zone_name} 時發生錯誤 (命令返回非零值): {e}")
+             logger.error(f"錯誤輸出: {e.stderr}")
         return ""
     except subprocess.TimeoutExpired:
         logger.error(f"查詢 zone {zone_name} 超時 (超過 300 秒)")
