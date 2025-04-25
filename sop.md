@@ -6,7 +6,7 @@
 
 ## 前提條件
 
-* 已安裝好一台 Ubuntu LTS 伺服器（建議 20.04 LTS 或更新版本）。
+* 已安裝好一台 Ubuntu LTS 伺服器，建議最小化安裝。避免弱點過多（建議 22.04 LTS 或更新版本）。。
 * 伺服器具有網路連線能力，可以：
    * 連接到指定的 DNS 伺服器 (執行 dig axfr)。
    * 連接到指定的 SMTP 伺服器 (發送 Email 通知)。
@@ -51,7 +51,7 @@ sudo useradd -m -s /bin/bash -g rpzusers rpz_monitor
 
 ```bash
 sudo apt update
-sudo apt install -y python3 python3-pip python3-venv dnsutils
+sudo apt install -y python3 python3-pip python3-venv dnsutils nano ufw
 ```
 
 ### 步驟 3：建立專案目錄與虛擬環境
@@ -99,7 +99,7 @@ pip install paramiko
 
 將以下檔案放置到 /opt/rpz_project/ 目錄下：
 * rpz_converter.py (修改後的 rpz_converter_env_password 腳本)
-* dynamic_f5_updater.py (修改後的 update_f5_datagroups_dynamic 腳本)
+* update_data_group.py (修改後的 update_f5_datagroups_dynamic 腳本)
 * rpz_fqdn_zone.txt (包含 FQDN Zone 列表)
 * rpz_ip_zone.txt (包含 IP Zone 列表)
 * f5_devices.txt (包含 F5 IP, 用戶名, 設備名 - 不含密碼)
@@ -119,7 +119,7 @@ sudo chown -R rpz_user:rpzusers /opt/rpz_project
 ```bash
 # 腳本需要執行權限
 sudo chmod +x /opt/rpz_project/rpz_converter.py
-sudo chmod +x /opt/rpz_project/dynamic_f5_updater.py
+sudo chmod +x /opt/rpz_project/update_data_group.py
 
 # 設定檔通常只需要 rpz_user 可讀寫
 # 讓同群組的 rpz_monitor 也能讀取
@@ -198,9 +198,9 @@ WorkingDirectory=/opt/rpz_project
 # 設定環境變數 (在這裡設定比 .bashrc 更安全)
 Environment="F5_PASSWORD_F5_Device1=<Password for F5_Device1>"
 Environment="F5_PASSWORD_F5_Device2=<Password for F5_Device2>"
-# ... 為 f5_devices.txt 中的每個設備添加一行 ...
+# ... 為 f5_devices.txt 中的每個設備添加一行 ...注意F5_Device1要對應到f5_devices.txt的資料
 # 如果環境變數太多，可以考慮使用 EnvironmentFile=/opt/rpz_project/.env
-ExecStart=/opt/rpz_project/venv/bin/python3 /opt/rpz_project/dynamic_f5_updater.py
+ExecStart=/opt/rpz_project/venv/bin/python3 /opt/rpz_project/update_data_group.py
 Restart=always
 RestartSec=10
 StandardOutput=journal # 將輸出導向 systemd journal
@@ -219,6 +219,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now rpz-converter.service
 sudo systemctl enable --now f5-updater.service
 ```
+注意: f5-updater.service 啟用之前，請先在F5 建立好Data Group的物件 
 
 * 檢查服務狀態：
 
@@ -237,6 +238,21 @@ sudo journalctl -u f5-updater.service -f
 ```
 
 (-f 可以持續追蹤新日誌，按 Ctrl+C 停止)
+
+* 如何在F5 先建立Data Group 物件
+
+ssh 到f5 之後，在tmsh 那一層執行以下指令
+create ltm data-group external rpztw_35_206_236_238 type string source-path http://RPZ_converter_IP:8080/rpztw_35_206_236_238.txt
+
+總共七個指令要下，Data Group name 對應RPZ source data如下
+
+"rpztw_34_102_218_71"   "rpztw_34_102_218_71.txt"
+"rpztw_182_173_0_181"  "rpztw_182_173_0_181.txt"
+"rpztw_112_121_114_76"  "rpztw_112_121_114_76"
+"rpztw_210_64_24_25"    "rpztw_210_64_24_25"
+"rpztw_210_69_155_3"    "rpztw_210_69_155_3"
+"rpztw_35_206_236_238"  "rpztw_35_206_236_238"
+"phishtw_182_173_0_170" "phishtw_182_173_0_170"
 
 ### 步驟 9：設定防火牆 (以 UFW 為例)
 
