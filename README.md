@@ -20,7 +20,7 @@
 
 ## 系統架構
 
-![RPZ to F5 DataGroup Automation Flow](APP_Flow.png)
+![RPZ to F5 DataGroup Automation Flow](APP_Flow_v1.png)
 
 ## 專案組件
 
